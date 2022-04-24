@@ -23,7 +23,14 @@ public class SentAnalysis {
 	
 	public static HashMap<String, Integer> posdict = new HashMap<>();
 	public static HashMap<String, Integer> negdict = new HashMap<>();
+
+	public static double numPos_label;
+
+	public static double numNeg_label;
 	
+	public static double numPos_words;
+
+	public static double numNeg_words;
 		
 	public static void main(String[] args) throws IOException
 	{	
@@ -38,6 +45,7 @@ public class SentAnalysis {
 			@SuppressWarnings("resource")
 			Scanner scan = new Scanner(System.in);
 			System.out.print("Text to classify>> ");
+
 			String textToClassify = scan.nextLine();
 			System.out.println("Result: "+classify(textToClassify));
 		}
@@ -118,11 +126,11 @@ public class SentAnalysis {
 			}
 
 		}
-		System.out.println(" pos dict ");
-		System.out.println(posdict.toString());
-		System.out.println(" neg dict ");
+		//System.out.println(" pos dict ");
+		//System.out.println(posdict.toString());
+		//System.out.println(" neg dict ");
 
-		System.out.println(negdict.toString());
+		//System.out.println(negdict.toString());
 
 		
 		 
@@ -159,7 +167,11 @@ public class SentAnalysis {
 						posdict.put(s, posdict.get(s)+1);
 					else
 						posdict.put(s,1);
-				}}}
+				}
+				numPos_words++;
+			}
+			numPos_label++;
+			}
 		else{
 			for (String s: words){
 				s = s.toLowerCase().replaceAll("[^a-zA-Z0-9]+","");
@@ -168,25 +180,74 @@ public class SentAnalysis {
 						negdict.put(s, negdict.get(s)+1);
 					else
 						negdict.put(s,1);
-				}}}
+				}
+				numNeg_words++;
+			}
+			numNeg_label++;
+			}
 	
 	}
 	
 	
-
-
-
 
 	/*
 	 * Classifier: Classifies the input text (type: String) as positive or negative
 	 */
 	public static String classify(String text)
 	{
-		String result="";
-		
-		return result;
+		List<String> words = Arrays.asList(text.split(" "));
+		//calculate conditional probability, return 5 if text is likely to be positive or 1 if neg
+		if (conditionalprobability(words) == 5) {
+			return "Positive";
+		}
+		return "Negative";
 		
 	}
+
+	public static double PR(boolean x){
+		//takes a boolean, if we want positive label input true, else input false
+		double prx = 1.0 / (numPos_label+numNeg_label);
+
+		if(x){
+			return numPos_label * prx;
+		}
+		return numNeg_label*prx;
+	}
+
+	public static int conditionalprobability(List<String> words){
+
+		double posOcurrence = 0.0, negOcurrence =0.0, neg_prob =0.0, pos_prob = 0.0;
+
+		for( String word : words){
+			// calculate conditional prob of each word here
+
+			if ( !negdict.containsKey(word)){
+				neg_prob += ( (1/numNeg_words ) * PR(false));
+				//neg_prob += ( (negOcurrence/numNeg_words ) * PR(false));
+
+			}
+			else if ( negdict.containsKey(word)){
+				negOcurrence = negdict.get(word);
+				neg_prob += ( (negOcurrence/numNeg_words ) * PR(false));
+			}
+
+			if(posdict.containsKey(word)){
+				posOcurrence = posdict.get(word);
+				pos_prob += ( (posOcurrence/numPos_words ) * PR(true) );
+			}
+			else if( !posdict.containsKey(word)){
+				//if word not in dict, then we put a pseudo count
+				pos_prob += ( (1/numPos_words ) * PR(true) );
+			}
+		}
+
+		if (pos_prob > neg_prob){
+			return 5;
+		}
+		return 1;
+
+	}
+
 
 	
 	
